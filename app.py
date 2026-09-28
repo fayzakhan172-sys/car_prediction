@@ -142,6 +142,8 @@ linear_reg = LinearRegression().fit(X_train, y_train)
 ridge_reg = Ridge(alpha=ridge_alpha).fit(X_train, y_train)
 lasso_reg = Lasso(alpha=lasso_alpha).fit(X_train, y_train)
 
+
+
 # Predictions
 y_pred_linear = linear_reg.predict(X_test)
 y_pred_ridge = ridge_reg.predict(X_test)
