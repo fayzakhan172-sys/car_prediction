@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CarWorth – Used Car Price Predictor</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f4f5fb;--card:#fff;--tx:#161a29;--mu:#6b7285;--bd:#e4e7f1;--ac:#4f46e5;--ac2:#06b6d4;--chip:#eef0fb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0e1a;--card:#141830;--tx:#eef0fa;--mu:#98a0bb;--bd:#252b4a;--ac:#818cf8;--ac2:#22d3ee;--chip:#1c2140}}
+:root[data-theme="dark"]{--bg:#0b0e1a;--card:#141830;--tx:#eef0fa;--mu:#98a0bb;--bd:#252b4a;--ac:#818cf8;--ac2:#22d3ee;--chip:#1c2140}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.hero{background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;padding:34px 16px 84px}
+.in{max-width:1000px;margin:0 auto}.logo{font-weight:800;letter-spacing:.3px;opacity:.95}
+.hero h1{font-size:clamp(1.6rem,4.5vw,2.5rem);margin:14px 0 6px}.hero p{margin:0;opacity:.9}
+main{max-width:1000px;margin:-56px auto 30px;padding:0 16px;display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+@media(max-width:800px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:22px;box-shadow:0 10px 30px rgba(20,24,60,.08)}
+.sec{margin-bottom:20px}.sec>b{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:9px 14px;border-radius:99px;border:1px solid var(--bd);background:var(--chip);color:var(--tx);cursor:pointer;font-size:.92rem}
+.chip.on{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;border-color:transparent}
+.sl{margin-bottom:14px}.sl div{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:6px}.sl output{font-weight:700;color:var(--ac)}
+input[type=range]{width:100%;accent-color:var(--ac)}
+.go{width:100%;padding:15px;border:0;border-radius:14px;color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--ac),var(--ac2))}
+.go:active{transform:scale(.99)}.go:disabled{opacity:.6}
+.res{text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:320px;position:sticky;top:12px;align-self:start}
+.car{font-size:3rem}.lab{color:var(--mu);font-size:.85rem}
+.price{font-size:2.8rem;font-weight:800;margin:4px 0;background:linear-gradient(135deg,var(--ac),var(--ac2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.bar{height:10px;border-radius:99px;background:var(--bd);margin:16px 0 8px;position:relative}
+.bar i{position:absolute;left:12%;right:12%;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,var(--ac),var(--ac2))}
+.rg{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mu)}
+.sum{margin-top:16px;font-size:.85rem;color:var(--mu);border-top:1px dashed var(--bd);padding-top:12px}
+.tag{display:inline-block;font-size:.72rem;padding:3px 10px;border-radius:99px;background:var(--chip);color:var(--mu);margin-top:10px}
+footer{text-align:center;color:var(--mu);font-size:.78rem;padding:0 16px 24px}
+</style></head><body>
+<div class="hero"><div class="in"><div class="logo">🚘 CarWorth</div><h1>Know what your used car is worth</h1><p>Instant price estimate powered by machine learning.</p></div></div>
+<main>
+<div class="card">
+<div class="sec"><b>Brand</b><div class="chips" id="Brand"></div></div>
+<div class="sec"><b>Body type</b><div class="chips" id="Body"></div></div>
+<div class="sec"><b>Engine type</b><div class="chips" id="EngineType"></div></div>
+<div class="sec"><b>Registered</b><div class="chips" id="Registration"></div></div>
+<div class="sl"><div><span>Year</span><output id="oYear"></output></div><input type="range" id="Year" min="1990" max="2026" value="2010"></div>
+<div class="sl"><div><span>Mileage (thousand km)</span><output id="oMileage"></output></div><input type="range" id="Mileage" min="0" max="500" step="5" value="150"></div>
+<div class="sl"><div><span>Engine volume (L)</span><output id="oEngineV"></output></div><input type="range" id="EngineV" min="0.6" max="6.5" step="0.1" value="2.0"></div>
+<button class="go" id="go">Estimate price</button>
+</div>
+<div class="card res" id="res"><div class="car">🚗</div><div class="lab">Choose details and tap “Estimate price”.</div></div>
+</main>
+<footer>Estimates are indicative and based on historical listing data.</footer>
+<script>
+// "/predict" = your Flask backend. When it's unreachable, a demo formula is used.
+const API_URL="/predict";
+const OPT={Brand:["Audi","BMW","Mercedes-Benz","Mitsubishi","Renault","Toyota","Volkswagen"],Body:["crossover","hatch","other","sedan","vagon","van"],EngineType:["Diesel","Gas","Other","Petrol"],Registration:["yes","no"]};
+const S={Brand:"BMW",Body:"sedan",EngineType:"Petrol",Registration:"yes"};
+const $=id=>document.getElementById(id);let shown=false,timer;
+for(const k in OPT){const box=$(k);OPT[k].forEach(v=>{const b=document.createElement("button");b.className="chip"+(S[k]==v?" on":"");b.textContent=v[0].toUpperCase()+v.slice(1);
+b.onclick=()=>{S[k]=v;[...box.children].forEach(c=>c.classList.remove("on"));b.classList.add("on");again()};box.appendChild(b)})}
+const fmt={Year:v=>v,Mileage:v=>v+"k km",EngineV:v=>(+v).toFixed(1)+" L"};
+["Year","Mileage","EngineV"].forEach(k=>{const upd=()=>{$("o"+k).textContent=fmt[k]($(k).value)};$(k).oninput=()=>{upd();again()};upd()});
+function again(){if(!shown)return;clearTimeout(timer);timer=setTimeout(run,300)}
+function demo(d){const br={"Mercedes-Benz":.35,BMW:.25,Audi:.2,Toyota:.15,Volkswagen:0,Mitsubishi:-.1,Renault:-.25}[d.Brand];
+const bd={crossover:.3,sedan:0,vagon:-.05,van:-.05,hatch:-.25,other:-.1}[d.Body];
+return Math.exp(8.9+br+bd+.09*(d.Year-2005)-.0022*d.Mileage+.25*d.EngineV+(d.Registration=="yes"?.2:-.3)+(d.EngineType=="Diesel"?.08:0))}
+const money=n=>"$"+Math.round(n).toLocaleString("en-US");
+function count(el,to){const t0=performance.now();(function f(t){const p=Math.min(1,(t-t0)/600);el.textContent=money(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(t0)}
+async function run(){
+const d={...S,Year:+$("Year").value,Mileage:+$("Mileage").value,EngineV:+$("EngineV").value};
+$("go").disabled=true;let p,live=false;
+try{const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});if(r.ok){const j=await r.json();if(j.price){p=j.price;live=true}}}catch(e){}
+if(p==null)p=demo(d);shown=true;
+$("res").innerHTML=`<div class="car">🚗</div><div class="lab">Estimated market price</div><div class="price" id="pr">$0</div>
+<div class="bar"><i></i></div><div class="rg"><span>${money(p*.88)}</span><span>${money(p*1.12)}</span></div>
+<div class="sum">${d.Brand} · ${d.Body} · ${d.Year} · ${d.Mileage}k km · ${d.EngineV.toFixed(1)} L ${d.EngineType}</div>
+<div><span class="tag">${live?"Live ML model":"Demo mode"}</span></div>`;
+count($("pr"),p);$("go").disabled=false}
+$("go").onclick=run;
+</script></body></html>
